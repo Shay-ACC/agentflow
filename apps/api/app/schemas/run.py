@@ -3,6 +3,16 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
+class RunSourceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    document_id: int
+    chunk_id: int
+    chunk_index: int
+    rank: int
+    content_preview: str
+
+
 class RunRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -16,3 +26,7 @@ class RunRead(BaseModel):
     error_message: str | None
     started_at: datetime
     finished_at: datetime | None
+
+
+class RunDetailRead(RunRead):
+    sources: list[RunSourceRead]

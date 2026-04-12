@@ -10,6 +10,12 @@ class Document(Base):
     __tablename__ = "documents"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    content_hash: Mapped[str] = mapped_column(
+        String(length=64),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
     filename: Mapped[str] = mapped_column(String(length=255), nullable=False)
     content_type: Mapped[str | None] = mapped_column(String(length=255), nullable=True)
     byte_size: Mapped[int] = mapped_column(Integer, nullable=False)

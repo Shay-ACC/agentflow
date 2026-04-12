@@ -6,9 +6,11 @@ export type {
   CreateMessageInput,
   CreateMessageResult,
   DocumentRecord,
+  DocumentUploadResult,
   Message,
   MessageRole,
   RunDetail,
+  RunSource,
   Run,
   RunStatus,
 } from "./types";

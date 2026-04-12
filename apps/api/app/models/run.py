@@ -41,3 +41,8 @@ class Run(Base):
 
     conversation: Mapped["Conversation"] = relationship(back_populates="runs")
     user_message: Mapped["Message"] = relationship(back_populates="run")
+    sources: Mapped[list["RunSource"]] = relationship(
+        back_populates="run",
+        cascade="all, delete-orphan",
+        order_by="RunSource.rank",
+    )

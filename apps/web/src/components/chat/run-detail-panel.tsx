@@ -89,6 +89,37 @@ export function RunDetailPanel({ run, isLoading }: RunDetailPanelProps) {
               </p>
             </div>
 
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-app-muted">
+                Retrieved Sources
+              </p>
+
+              {run.sources.length === 0 ? (
+                <p className="mt-2 text-sm leading-6 text-app-subtle">
+                  No retrieved sources were recorded for this run.
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {run.sources.map((source) => (
+                    <article
+                      key={`${source.rank}-${source.chunk_id}`}
+                      className="rounded-2xl border border-app-border bg-[#0b1422] px-4 py-4"
+                    >
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-app-muted">
+                        <span>Rank {source.rank}</span>
+                        <span>Document {source.document_id}</span>
+                        <span>Chunk {source.chunk_id}</span>
+                        <span>Index {source.chunk_index}</span>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-app-text">
+                        {source.content_preview}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {run.error_message ? (
               <div className="mt-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-app-muted">

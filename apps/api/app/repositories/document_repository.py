@@ -8,15 +8,25 @@ class DocumentRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
+    def get_by_content_hash(self, content_hash: str) -> Document | None:
+        statement = (
+            select(Document)
+            .where(Document.content_hash == content_hash)
+            .options(selectinload(Document.chunks))
+        )
+        return self.session.scalar(statement)
+
     def create(
         self,
         *,
+        content_hash: str,
         filename: str,
         content_type: str | None,
         byte_size: int,
         text_length: int,
     ) -> Document:
         document = Document(
+            content_hash=content_hash,
             filename=filename,
             content_type=content_type,
             byte_size=byte_size,

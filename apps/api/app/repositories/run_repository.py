@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.run import Run
+from app.models.run_source import RunSource
 
 
 class RunRepository:
@@ -14,7 +15,7 @@ class RunRepository:
         statement = (
             select(Run)
             .where(Run.id == run_id)
-            .options(selectinload(Run.user_message))
+            .options(selectinload(Run.user_message), selectinload(Run.sources))
         )
         return self.session.scalar(statement)
 
@@ -55,6 +56,41 @@ class RunRepository:
         self.session.commit()
         self.session.refresh(run)
         return run
+
+    def create_sources(
+        self,
+        run: Run,
+        *,
+        source_records: list[dict[str, int | str]],
+    ) -> list[RunSource]:
+        seen_chunk_ids: set[int] = set()
+        sources: list[RunSource] = []
+
+        for record in source_records:
+            chunk_id = int(record["chunk_id"])
+            if chunk_id in seen_chunk_ids:
+                continue
+            seen_chunk_ids.add(chunk_id)
+            sources.append(
+                RunSource(
+                    run_id=run.id,
+                    document_id=int(record["document_id"]),
+                    chunk_id=chunk_id,
+                    chunk_index=int(record["chunk_index"]),
+                    rank=int(record["rank"]),
+                    content_preview=str(record["content_preview"]),
+                ),
+            )
+
+        if not sources:
+            return []
+
+        self.session.add_all(sources)
+        self.session.commit()
+        for source in sources:
+            self.session.refresh(source)
+        self.session.refresh(run)
+        return sources
 
     def list_by_conversation_id(self, conversation_id: int) -> list[Run]:
         statement = (

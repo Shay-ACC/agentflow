@@ -18,3 +18,8 @@ class DocumentRead(BaseModel):
     chunk_count: int
     index_status: DocumentIndexStatus
     created_at: datetime
+
+
+class DocumentUploadResult(BaseModel):
+    document: DocumentRead
+    deduplicated: bool

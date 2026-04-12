@@ -81,10 +81,26 @@ export function DocumentUploadForm() {
     setIsUploading(true);
 
     try {
-      const nextDocument = await apiClient.uploadDocument(selectedFile);
-      setDocuments((currentDocuments) => [nextDocument, ...currentDocuments]);
+      const result = await apiClient.uploadDocument(selectedFile);
+      setDocuments((currentDocuments) => {
+        const existingIndex = currentDocuments.findIndex(
+          (document) => document.id === result.document.id,
+        );
+
+        if (existingIndex === -1) {
+          return [result.document, ...currentDocuments];
+        }
+
+        return currentDocuments.map((document) =>
+          document.id === result.document.id ? result.document : document,
+        );
+      });
       setSelectedFile(null);
-      setSuccessMessage(`Stored ${nextDocument.filename} successfully.`);
+      setSuccessMessage(
+        result.deduplicated
+          ? `${result.document.filename} already exists. Reused existing index.`
+          : `Stored ${result.document.filename} successfully.`,
+      );
       setErrorMessage(null);
       form?.reset();
     } catch (error) {

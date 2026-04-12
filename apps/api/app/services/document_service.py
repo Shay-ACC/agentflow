@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import uuid
 
@@ -19,7 +20,7 @@ from app.core.qdrant import (
 )
 from app.repositories.chunk_repository import ChunkRepository
 from app.repositories.document_repository import DocumentRepository
-from app.schemas.document import DocumentRead
+from app.schemas.document import DocumentRead, DocumentUploadResult
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,17 @@ class DocumentService:
         _get_supported_extension(filename)
         raw_bytes = await file.read()
         text = _extract_text(raw_bytes)
+        content_hash = _compute_content_hash(text)
+        existing_document = self.document_repository.get_by_content_hash(content_hash)
+        if existing_document is not None:
+            return DocumentUploadResult(
+                document=self._build_document_read(
+                    existing_document,
+                    collection_available=self._is_collection_available(),
+                ),
+                deduplicated=True,
+            )
+
         chunks = _chunk_text(text)
 
         if not chunks:
@@ -83,6 +95,7 @@ class DocumentService:
             ) from exc
 
         document = self.document_repository.create(
+            content_hash=content_hash,
             filename=filename,
             content_type=file.content_type,
             byte_size=len(raw_bytes),
@@ -136,7 +149,10 @@ class DocumentService:
                 detail=f"Qdrant indexing failed. [{type(exc).__name__}: {exc}]",
             ) from exc
 
-        return self._build_document_read(document, collection_available=True)
+        return DocumentUploadResult(
+            document=self._build_document_read(document, collection_available=True),
+            deduplicated=False,
+        )
 
     def list_documents(self):
         documents = self.document_repository.list_all()
@@ -200,13 +216,21 @@ def _extract_text(raw_bytes: bytes) -> str:
             detail="The uploaded file must be UTF-8 encoded text.",
         ) from exc
 
-    normalized = text.strip()
+    normalized = _normalize_extracted_text(text)
     if not normalized:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The uploaded file is empty.",
         )
     return normalized
+
+
+def _normalize_extracted_text(text: str) -> str:
+    return text.replace("\r\n", "\n").replace("\r", "\n").strip()
+
+
+def _compute_content_hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def _chunk_text(text: str) -> list[str]:

@@ -59,6 +59,7 @@ class ConversationService:
             conversation_id,
         )
         system_messages = self._build_retrieval_system_messages(
+            run=run,
             conversation_id=conversation_id,
             user_message_content=payload.content,
         )
@@ -180,6 +181,7 @@ class ConversationService:
     def _build_retrieval_system_messages(
         self,
         *,
+        run,
         conversation_id: int,
         user_message_content: str,
     ) -> list[str]:
@@ -224,6 +226,20 @@ class ConversationService:
             )
             return []
 
+        self.run_repository.create_sources(
+            run,
+            source_records=[
+                {
+                    "document_id": chunk.document_id,
+                    "chunk_id": chunk.chunk_id,
+                    "chunk_index": chunk.chunk_index,
+                    "rank": rank,
+                    "content_preview": self._build_content_preview(chunk.content),
+                }
+                for rank, chunk in enumerate(retrieved_chunks, start=1)
+            ],
+        )
+
         self._log_retrieval_used(
             conversation_id=conversation_id,
             retrieved_chunks=retrieved_chunks,
@@ -261,3 +277,9 @@ class ConversationService:
             [chunk.chunk_id for chunk in retrieved_chunks],
             [chunk.document_id for chunk in retrieved_chunks],
         )
+
+    def _build_content_preview(self, content: str) -> str:
+        preview = " ".join(content.split())
+        if len(preview) <= 240:
+            return preview
+        return f"{preview[:237]}..."

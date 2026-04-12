@@ -42,6 +42,11 @@ export type DocumentRecord = {
   created_at: string;
 };
 
+export type DocumentUploadResult = {
+  document: DocumentRecord;
+  deduplicated: boolean;
+};
+
 export type MessageRole = "user" | "assistant" | "system";
 
 export type Message = {
@@ -67,7 +72,17 @@ export type Run = {
   finished_at: string | null;
 };
 
-export type RunDetail = Run;
+export type RunSource = {
+  document_id: number;
+  chunk_id: number;
+  chunk_index: number;
+  rank: number;
+  content_preview: string;
+};
+
+export type RunDetail = Run & {
+  sources: RunSource[];
+};
 
 export type CreateMessageResult = {
   user_message: Message;

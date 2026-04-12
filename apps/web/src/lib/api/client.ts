@@ -7,6 +7,7 @@ import type {
   CreateMessageInput,
   CreateMessageResult,
   DocumentRecord,
+  DocumentUploadResult,
   Message,
   RunDetail,
   Run,
@@ -80,7 +81,7 @@ export class ApiClient {
     return this.request<RunDetail>(`/runs/${runId}`);
   }
 
-  async uploadDocument(file: File): Promise<DocumentRecord> {
+  async uploadDocument(file: File): Promise<DocumentUploadResult> {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -97,7 +98,7 @@ export class ApiClient {
       throw new Error(errorPayload?.detail ?? "Document upload failed.");
     }
 
-    return (await response.json()) as DocumentRecord;
+    return (await response.json()) as DocumentUploadResult;
   }
 
   async createMessage(

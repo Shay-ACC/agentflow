@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, UploadFile, status
 
 from app.api.deps import get_document_service
-from app.schemas.document import DocumentRead
+from app.schemas.document import DocumentRead, DocumentUploadResult
 from app.services.document_service import DocumentService
 
 
@@ -16,9 +16,9 @@ def list_documents(service: DocumentServiceDep) -> list[DocumentRead]:
     return service.list_documents()
 
 
-@router.post("", response_model=DocumentRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DocumentUploadResult, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: Annotated[UploadFile, File(...)],
     service: DocumentServiceDep,
-) -> DocumentRead:
+) -> DocumentUploadResult:
     return await service.upload_document(file=file)
