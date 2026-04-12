@@ -10,9 +10,16 @@ from app.core.openai import (
     EmbeddingResponseError,
     generate_embeddings,
 )
-from app.core.qdrant import QdrantChunkPoint, delete_chunk_points, ensure_chunk_collection, upsert_chunk_points
+from app.core.qdrant import (
+    QdrantChunkPoint,
+    chunk_collection_exists,
+    delete_chunk_points,
+    ensure_chunk_collection,
+    upsert_chunk_points,
+)
 from app.repositories.chunk_repository import ChunkRepository
 from app.repositories.document_repository import DocumentRepository
+from app.schemas.document import DocumentRead
 
 
 logger = logging.getLogger(__name__)
@@ -129,10 +136,47 @@ class DocumentService:
                 detail=f"Qdrant indexing failed. [{type(exc).__name__}: {exc}]",
             ) from exc
 
-        return self.document_repository.list_all()[0]
+        return self._build_document_read(document, collection_available=True)
 
     def list_documents(self):
-        return self.document_repository.list_all()
+        documents = self.document_repository.list_all()
+        collection_available = self._is_collection_available()
+        return [
+            self._build_document_read(
+                document,
+                collection_available=collection_available,
+            )
+            for document in documents
+        ]
+
+    def _build_document_read(
+        self,
+        document,
+        *,
+        collection_available: bool,
+    ) -> DocumentRead:
+        index_status = "indexed" if document.chunk_count > 0 and collection_available else "index_missing"
+        return DocumentRead(
+            id=document.id,
+            filename=document.filename,
+            content_type=document.content_type,
+            byte_size=document.byte_size,
+            text_length=document.text_length,
+            chunk_count=document.chunk_count,
+            index_status=index_status,
+            created_at=document.created_at,
+        )
+
+    def _is_collection_available(self) -> bool:
+        try:
+            return chunk_collection_exists()
+        except Exception as exc:
+            logger.warning(
+                "Document index status check failed exception_type=%s exception_message=%s",
+                type(exc).__name__,
+                str(exc),
+            )
+            return False
 
 
 def _get_supported_extension(filename: str) -> str:

@@ -84,7 +84,7 @@ export function DocumentUploadForm() {
       const nextDocument = await apiClient.uploadDocument(selectedFile);
       setDocuments((currentDocuments) => [nextDocument, ...currentDocuments]);
       setSelectedFile(null);
-      setSuccessMessage(`Indexed ${nextDocument.filename} successfully.`);
+      setSuccessMessage(`Stored ${nextDocument.filename} successfully.`);
       setErrorMessage(null);
       form?.reset();
     } catch (error) {
@@ -106,8 +106,9 @@ export function DocumentUploadForm() {
               Upload a text document
             </label>
             <p className="mt-2 text-sm leading-7 text-app-subtle">
-              v1 supports `.txt` and `.md` only. Uploading a document extracts
-              text, chunks it, embeds it, and indexes it for grounded replies.
+              v1 supports `.txt` and `.md` only. Each upload creates a document
+              record in PostgreSQL and attempts to keep its vector index
+              available in Qdrant.
             </p>
           </div>
 
@@ -120,7 +121,8 @@ export function DocumentUploadForm() {
 
           <div className="flex items-center justify-between gap-4">
             <p className="text-xs text-app-muted">
-              Indexed chunks are stored in PostgreSQL and Qdrant.
+              The list below shows both the document record and current index
+              availability.
             </p>
             <button
               type="submit"
@@ -149,10 +151,11 @@ export function DocumentUploadForm() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold text-app-text">
-              Indexed Documents
+              Document Records
             </h2>
             <p className="mt-2 text-sm leading-7 text-app-subtle">
-              Simple v1 list of uploaded sources available to retrieval.
+              Simple v1 view of uploaded documents and whether their vector
+              index is currently available.
             </p>
           </div>
         </div>
@@ -185,9 +188,21 @@ export function DocumentUploadForm() {
                         Uploaded {formatDateTime(document.created_at)}
                       </p>
                     </div>
-                    <span className="rounded-full bg-app-panel-soft px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-muted">
-                      {document.chunk_count} chunks
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={[
+                          "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]",
+                          document.index_status === "indexed"
+                            ? "bg-emerald-500/15 text-emerald-300"
+                            : "bg-amber-500/15 text-amber-200",
+                        ].join(" ")}
+                      >
+                        {document.index_status === "indexed" ? "Indexed" : "Index Missing"}
+                      </span>
+                      <span className="rounded-full bg-app-panel-soft px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-muted">
+                        {document.chunk_count} chunks
+                      </span>
+                    </div>
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-4 text-xs text-app-subtle">

@@ -6,6 +6,10 @@ from app.core.config import get_settings
 from app.core.db import ServiceCheckResult
 
 
+class QdrantCollectionNotFoundError(Exception):
+    pass
+
+
 @dataclass(frozen=True)
 class QdrantClientPlaceholder:
     url: str
@@ -83,6 +87,18 @@ def ensure_chunk_collection(vector_size: int) -> None:
     )
 
 
+def chunk_collection_exists() -> bool:
+    settings = get_settings()
+
+    try:
+        _qdrant_request("GET", f"/collections/{settings.qdrant_collection_name}")
+        return True
+    except error.HTTPError as exc:
+        if exc.code == 404:
+            return False
+        raise
+
+
 def upsert_chunk_points(points: list[QdrantChunkPoint]) -> None:
     if not points:
         return
@@ -115,15 +131,22 @@ def search_chunk_points(
     limit: int,
 ) -> list[RetrievedChunk]:
     settings = get_settings()
-    response = _qdrant_request(
-        "POST",
-        f"/collections/{settings.qdrant_collection_name}/points/search",
-        payload={
-            "vector": query_vector,
-            "limit": limit,
-            "with_payload": True,
-        },
-    )
+    try:
+        response = _qdrant_request(
+            "POST",
+            f"/collections/{settings.qdrant_collection_name}/points/search",
+            payload={
+                "vector": query_vector,
+                "limit": limit,
+                "with_payload": True,
+            },
+        )
+    except error.HTTPError as exc:
+        if exc.code == 404:
+            raise QdrantCollectionNotFoundError(
+                f"Collection '{settings.qdrant_collection_name}' does not exist.",
+            ) from exc
+        raise
 
     results = response.get("result", [])
     return [

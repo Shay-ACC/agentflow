@@ -13,7 +13,7 @@ from app.core.openai import (
     generate_embeddings,
     get_llm_client,
 )
-from app.core.qdrant import search_chunk_points
+from app.core.qdrant import QdrantCollectionNotFoundError, search_chunk_points
 from app.repositories.chunk_repository import ChunkRepository
 from app.repositories.conversation_repository import ConversationRepository
 from app.repositories.message_repository import MessageRepository
@@ -202,6 +202,12 @@ class ConversationService:
             self._log_retrieval_skipped(
                 conversation_id=conversation_id,
                 reason=f"embedding_error:{type(exc).__name__}",
+            )
+            return []
+        except QdrantCollectionNotFoundError:
+            self._log_retrieval_skipped(
+                conversation_id=conversation_id,
+                reason="no_collection",
             )
             return []
         except Exception as exc:

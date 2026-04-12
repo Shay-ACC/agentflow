@@ -38,6 +38,7 @@ export type DocumentRecord = {
   byte_size: number;
   text_length: number;
   chunk_count: number;
+  index_status: "indexed" | "index_missing";
   created_at: string;
 };
 
