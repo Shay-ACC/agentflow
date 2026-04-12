@@ -31,6 +31,16 @@ export type Conversation = {
   created_at: string;
 };
 
+export type DocumentRecord = {
+  id: number;
+  filename: string;
+  content_type: string | null;
+  byte_size: number;
+  text_length: number;
+  chunk_count: number;
+  created_at: string;
+};
+
 export type MessageRole = "user" | "assistant" | "system";
 
 export type Message = {

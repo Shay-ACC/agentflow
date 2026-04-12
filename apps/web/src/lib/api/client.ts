@@ -6,6 +6,7 @@ import type {
   Conversation,
   CreateMessageInput,
   CreateMessageResult,
+  DocumentRecord,
   Message,
   RunDetail,
   Run,
@@ -52,6 +53,10 @@ export class ApiClient {
     return this.request<Conversation[]>("/conversations");
   }
 
+  async listDocuments(): Promise<DocumentRecord[]> {
+    return this.request<DocumentRecord[]>("/documents");
+  }
+
   async getConversation(conversationId: number): Promise<Conversation> {
     return this.request<Conversation>(`/conversations/${conversationId}`);
   }
@@ -73,6 +78,26 @@ export class ApiClient {
 
   async getRun(runId: number): Promise<RunDetail> {
     return this.request<RunDetail>(`/runs/${runId}`);
+  }
+
+  async uploadDocument(file: File): Promise<DocumentRecord> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(this.buildUrl("/documents"), {
+      method: "POST",
+      body: formData,
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      const errorPayload = (await response.json().catch(() => null)) as
+        | { detail?: string }
+        | null;
+      throw new Error(errorPayload?.detail ?? "Document upload failed.");
+    }
+
+    return (await response.json()) as DocumentRecord;
   }
 
   async createMessage(

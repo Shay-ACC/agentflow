@@ -5,8 +5,10 @@ export type {
   Conversation,
   CreateMessageInput,
   CreateMessageResult,
+  DocumentRecord,
   Message,
   MessageRole,
+  RunDetail,
   Run,
   RunStatus,
 } from "./types";

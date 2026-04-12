@@ -4,7 +4,17 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.openai import LLMConfigurationError, LLMResponseError, get_llm_client, generate_assistant_reply
+from app.core.openai import (
+    EmbeddingConfigurationError,
+    EmbeddingResponseError,
+    LLMConfigurationError,
+    LLMResponseError,
+    generate_assistant_reply,
+    generate_embeddings,
+    get_llm_client,
+)
+from app.core.qdrant import search_chunk_points
+from app.repositories.chunk_repository import ChunkRepository
 from app.repositories.conversation_repository import ConversationRepository
 from app.repositories.message_repository import MessageRepository
 from app.repositories.run_repository import RunRepository
@@ -20,6 +30,7 @@ class ConversationService:
         self.conversation_repository = ConversationRepository(session)
         self.message_repository = MessageRepository(session)
         self.run_repository = RunRepository(session)
+        self.chunk_repository = ChunkRepository(session)
 
     def create_conversation(self):
         return self.conversation_repository.create()
@@ -47,6 +58,10 @@ class ConversationService:
         conversation_messages = self.message_repository.list_by_conversation_id(
             conversation_id,
         )
+        system_messages = self._build_retrieval_system_messages(
+            conversation_id=conversation_id,
+            user_message_content=payload.content,
+        )
 
         try:
             assistant_content = generate_assistant_reply(
@@ -57,6 +72,7 @@ class ConversationService:
                     }
                     for message in conversation_messages
                 ],
+                system_messages=system_messages,
             )
         except LLMConfigurationError as exc:
             self.run_repository.mark_failed(
@@ -160,3 +176,82 @@ class ConversationService:
     def _truncate_error_message(self, message: str) -> str:
         normalized_message = message.strip() or "Unknown error."
         return normalized_message[:500]
+
+    def _build_retrieval_system_messages(
+        self,
+        *,
+        conversation_id: int,
+        user_message_content: str,
+    ) -> list[str]:
+        if self.chunk_repository.count_all() == 0:
+            self._log_retrieval_skipped(
+                conversation_id=conversation_id,
+                reason="no_indexed_chunks",
+            )
+            return []
+
+        settings = get_settings()
+
+        try:
+            query_embedding = generate_embeddings(texts=[user_message_content])[0]
+            retrieved_chunks = search_chunk_points(
+                query_vector=query_embedding,
+                limit=settings.rag_top_k,
+            )
+        except (EmbeddingConfigurationError, EmbeddingResponseError) as exc:
+            self._log_retrieval_skipped(
+                conversation_id=conversation_id,
+                reason=f"embedding_error:{type(exc).__name__}",
+            )
+            return []
+        except Exception as exc:
+            self._log_retrieval_skipped(
+                conversation_id=conversation_id,
+                reason=f"retrieval_error:{type(exc).__name__}",
+            )
+            return []
+
+        if not retrieved_chunks:
+            logger.info(
+                "RAG retrieval returned_zero_chunks conversation_id=%s reason=no_results retrieved_chunk_count=0 chunk_ids=[] document_ids=[]",
+                conversation_id,
+            )
+            return []
+
+        self._log_retrieval_used(
+            conversation_id=conversation_id,
+            retrieved_chunks=retrieved_chunks,
+        )
+
+        return [
+            "\n\n".join(
+                [
+                    "Use the retrieved context below when it is relevant to the user request.",
+                    "If the context is not relevant, answer from the conversation alone.",
+                    "Retrieved context:",
+                    *[
+                        (
+                            f"[Document {chunk.document_id} | Chunk {chunk.chunk_id} | Index {chunk.chunk_index}]\n"
+                            f"{chunk.content}"
+                        )
+                        for chunk in retrieved_chunks
+                    ],
+                ],
+            ),
+        ]
+
+    def _log_retrieval_skipped(self, *, conversation_id: int, reason: str) -> None:
+        logger.info(
+            "RAG retrieval skipped conversation_id=%s reason=%s retrieved_chunk_count=0 chunk_ids=[] document_ids=[]",
+            conversation_id,
+            reason,
+        )
+
+    def _log_retrieval_used(self, *, conversation_id: int, retrieved_chunks: list) -> None:
+        logger.info(
+            "RAG retrieval used conversation_id=%s retrieved_chunk_count=%s chunk_ids=%s document_ids=%s",
+            conversation_id,
+            len(retrieved_chunks),
+            [chunk.chunk_id for chunk in retrieved_chunks],
+            [chunk.document_id for chunk in retrieved_chunks],
+        )

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import SessionLocal
 from app.services.conversation_service import ConversationService
+from app.services.document_service import DocumentService
 
 
 def get_db_session() -> Generator[Session, None, None]:
@@ -20,3 +21,9 @@ def get_conversation_service(
     session: Annotated[Session, Depends(get_db_session)],
 ) -> ConversationService:
     return ConversationService(session=session)
+
+
+def get_document_service(
+    session: Annotated[Session, Depends(get_db_session)],
+) -> DocumentService:
+    return DocumentService(session=session)

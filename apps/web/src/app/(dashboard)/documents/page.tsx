@@ -1,3 +1,6 @@
+import { DocumentUploadForm } from "@/components/documents/document-upload-form";
+
+
 export default function DocumentsPage() {
   return (
     <section className="space-y-6">
@@ -9,16 +12,12 @@ export default function DocumentsPage() {
           Document Library
         </h1>
         <p className="max-w-2xl text-sm leading-7 text-app-subtle">
-          This area will later support uploads, indexing status, and document
-          management for retrieval workflows.
+          Minimal retrieval slice: upload plain text documents, index them, and
+          make them available to the grounded chat flow.
         </p>
       </header>
 
-      <div className="rounded-3xl border border-app-border bg-app-panel p-6">
-        <p className="text-sm text-app-subtle">
-          Placeholder only. No upload or retrieval flow has been implemented.
-        </p>
-      </div>
+      <DocumentUploadForm />
     </section>
   );
 }
