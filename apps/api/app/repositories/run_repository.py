@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from datetime import datetime, timezone
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.run import Run
 
@@ -52,6 +52,7 @@ class RunRepository:
         statement = (
             select(Run)
             .where(Run.conversation_id == conversation_id)
+            .options(selectinload(Run.user_message))
             .order_by(Run.started_at.desc(), Run.id.desc())
         )
         return list(self.session.scalars(statement).all())

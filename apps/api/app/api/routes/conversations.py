@@ -75,4 +75,25 @@ def list_runs(
     service: ConversationServiceDep,
 ) -> list[RunRead]:
     runs = service.list_runs(conversation_id=conversation_id)
-    return [RunRead.model_validate(run) for run in runs]
+    return [
+        RunRead(
+            id=run.id,
+            conversation_id=run.conversation_id,
+            user_message_id=run.user_message_id,
+            user_message_preview=_build_user_message_preview(run.user_message.content),
+            provider=run.provider,
+            model=run.model,
+            status=run.status,
+            error_message=run.error_message,
+            started_at=run.started_at,
+            finished_at=run.finished_at,
+        )
+        for run in runs
+    ]
+
+
+def _build_user_message_preview(content: str) -> str:
+    preview = " ".join(content.split())
+    if len(preview) <= 80:
+        return preview
+    return f"{preview[:77]}..."

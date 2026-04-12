@@ -84,6 +84,10 @@ export function RunTracePanel({ runs, isLoadingRuns }: RunTracePanelProps) {
                   <span>User message: {run.user_message_id}</span>
                 </div>
 
+                <p className="mt-3 text-sm leading-6 text-app-text">
+                  {run.user_message_preview}
+                </p>
+
                 {run.error_message ? (
                   <p className="mt-3 text-xs leading-6 text-rose-200">
                     {run.error_message}

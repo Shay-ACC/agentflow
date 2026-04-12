@@ -47,6 +47,7 @@ export type Run = {
   id: number;
   conversation_id: number;
   user_message_id: number;
+  user_message_preview: string;
   provider: string;
   model: string;
   status: RunStatus;

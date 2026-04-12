@@ -9,6 +9,7 @@ class RunRead(BaseModel):
     id: int
     conversation_id: int
     user_message_id: int
+    user_message_preview: str
     provider: str
     model: str
     status: str
