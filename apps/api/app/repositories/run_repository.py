@@ -10,6 +10,14 @@ class RunRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
+    def get_by_id(self, run_id: int) -> Run | None:
+        statement = (
+            select(Run)
+            .where(Run.id == run_id)
+            .options(selectinload(Run.user_message))
+        )
+        return self.session.scalar(statement)
+
     def create_pending(
         self,
         *,

@@ -133,6 +133,15 @@ class ConversationService:
         self._get_conversation_or_404(conversation_id)
         return self.run_repository.list_by_conversation_id(conversation_id)
 
+    def get_run(self, *, run_id: int):
+        run = self.run_repository.get_by_id(run_id)
+        if run is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Run not found.",
+            )
+        return run
+
     def _get_conversation_or_404(self, conversation_id: int):
         conversation = self.conversation_repository.get_by_id(conversation_id)
         if conversation is None:

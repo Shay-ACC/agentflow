@@ -1,18 +1,23 @@
+import { RunDetailPanel } from "@/components/chat/run-detail-panel";
 import { RunTracePanel } from "@/components/chat/run-trace-panel";
-import type { Conversation, Message, Run } from "@/lib/api";
+import type { Conversation, Message, Run, RunDetail } from "@/lib/api";
 
 
 type ChatThreadProps = {
   conversation: Conversation | null;
   messages: Message[];
   runs: Run[];
+  selectedRun: RunDetail | null;
   draft: string;
   isLoadingMessages: boolean;
   isLoadingRuns: boolean;
+  isLoadingRunDetail: boolean;
   isSendingMessage: boolean;
+  selectedRunId: number | null;
   onDraftChange: (value: string) => void;
   onSendMessage: () => void;
   onCreateConversation: () => void;
+  onSelectRun: (runId: number) => void;
 };
 
 
@@ -28,13 +33,17 @@ export function ChatThread({
   conversation,
   messages,
   runs,
+  selectedRun,
   draft,
   isLoadingMessages,
   isLoadingRuns,
+  isLoadingRunDetail,
   isSendingMessage,
+  selectedRunId,
   onDraftChange,
   onSendMessage,
   onCreateConversation,
+  onSelectRun,
 }: ChatThreadProps) {
   const hasConversation = conversation !== null;
 
@@ -74,7 +83,13 @@ export function ChatThread({
         </div>
       ) : (
         <>
-          <RunTracePanel runs={runs} isLoadingRuns={isLoadingRuns} />
+          <RunTracePanel
+            runs={runs}
+            isLoadingRuns={isLoadingRuns}
+            selectedRunId={selectedRunId}
+            onSelectRun={onSelectRun}
+          />
+          <RunDetailPanel run={selectedRun} isLoading={isLoadingRunDetail} />
 
           <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
             {isLoadingMessages ? (

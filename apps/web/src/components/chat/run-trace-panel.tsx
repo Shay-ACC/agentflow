@@ -4,6 +4,8 @@ import type { Run } from "@/lib/api";
 type RunTracePanelProps = {
   runs: Run[];
   isLoadingRuns: boolean;
+  selectedRunId: number | null;
+  onSelectRun: (runId: number) => void;
 };
 
 
@@ -20,7 +22,12 @@ function formatRunTime(value: string | null): string {
 }
 
 
-export function RunTracePanel({ runs, isLoadingRuns }: RunTracePanelProps) {
+export function RunTracePanel({
+  runs,
+  isLoadingRuns,
+  selectedRunId,
+  onSelectRun,
+}: RunTracePanelProps) {
   return (
     <section className="border-b border-app-border px-6 py-5">
       <div className="flex items-center justify-between gap-4">
@@ -49,8 +56,10 @@ export function RunTracePanel({ runs, isLoadingRuns }: RunTracePanelProps) {
 
         {!isLoadingRuns
           ? runs.map((run) => (
-              <article
+              <button
                 key={run.id}
+                type="button"
+                onClick={() => onSelectRun(run.id)}
                 className="rounded-2xl border border-app-border bg-[#0d1727] px-4 py-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -82,6 +91,7 @@ export function RunTracePanel({ runs, isLoadingRuns }: RunTracePanelProps) {
                   <span>Provider: {run.provider}</span>
                   <span>Model: {run.model}</span>
                   <span>User message: {run.user_message_id}</span>
+                  {selectedRunId === run.id ? <span>Selected</span> : null}
                 </div>
 
                 <p className="mt-3 text-sm leading-6 text-app-text">
@@ -93,7 +103,7 @@ export function RunTracePanel({ runs, isLoadingRuns }: RunTracePanelProps) {
                     {run.error_message}
                   </p>
                 ) : null}
-              </article>
+              </button>
             ))
           : null}
       </div>

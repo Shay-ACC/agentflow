@@ -7,6 +7,7 @@ import type {
   CreateMessageInput,
   CreateMessageResult,
   Message,
+  RunDetail,
   Run,
 } from "./types";
 
@@ -68,6 +69,10 @@ export class ApiClient {
 
   async listRuns(conversationId: number): Promise<Run[]> {
     return this.request<Run[]>(`/conversations/${conversationId}/runs`);
+  }
+
+  async getRun(runId: number): Promise<RunDetail> {
+    return this.request<RunDetail>(`/runs/${runId}`);
   }
 
   async createMessage(

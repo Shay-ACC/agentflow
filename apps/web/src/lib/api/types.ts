@@ -56,6 +56,8 @@ export type Run = {
   finished_at: string | null;
 };
 
+export type RunDetail = Run;
+
 export type CreateMessageResult = {
   user_message: Message;
   assistant_message: Message;

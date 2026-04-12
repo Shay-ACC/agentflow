@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { apiClient } from "@/lib/api";
-import type { Conversation, Message, Run } from "@/lib/api";
+import type { Conversation, Message, Run, RunDetail } from "@/lib/api";
 
 
 export function ChatWorkspace() {
@@ -13,10 +13,13 @@ export function ChatWorkspace() {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [runs, setRuns] = useState<Run[]>([]);
+  const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
+  const [selectedRun, setSelectedRun] = useState<RunDetail | null>(null);
   const [draft, setDraft] = useState("");
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isLoadingRuns, setIsLoadingRuns] = useState(false);
+  const [isLoadingRunDetail, setIsLoadingRunDetail] = useState(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +120,8 @@ export function ChatWorkspace() {
   useEffect(() => {
     if (selectedConversationId === null) {
       setRuns([]);
+      setSelectedRunId(null);
+      setSelectedRun(null);
       return;
     }
 
@@ -132,6 +137,13 @@ export function ChatWorkspace() {
         }
 
         setRuns(nextRuns);
+        setSelectedRunId((currentRunId) => {
+          if (currentRunId !== null && nextRuns.some((run) => run.id === currentRunId)) {
+            return currentRunId;
+          }
+
+          return null;
+        });
         setError(null);
       } catch (nextError) {
         if (!isActive) {
@@ -157,6 +169,50 @@ export function ChatWorkspace() {
     };
   }, [selectedConversationId]);
 
+  useEffect(() => {
+    if (selectedRunId === null) {
+      setSelectedRun(null);
+      return;
+    }
+
+    let isActive = true;
+
+    async function loadRunDetail() {
+      setIsLoadingRunDetail(true);
+
+      try {
+        const nextRun = await apiClient.getRun(selectedRunId);
+        if (!isActive) {
+          return;
+        }
+
+        setSelectedRun(nextRun);
+        setError(null);
+      } catch (nextError) {
+        if (!isActive) {
+          return;
+        }
+
+        setSelectedRun(null);
+        setError(
+          nextError instanceof Error
+            ? nextError.message
+            : "Failed to load run detail.",
+        );
+      } finally {
+        if (isActive) {
+          setIsLoadingRunDetail(false);
+        }
+      }
+    }
+
+    void loadRunDetail();
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedRunId]);
+
   const selectedConversation =
     conversations.find((conversation) => conversation.id === selectedConversationId) ?? null;
 
@@ -169,6 +225,8 @@ export function ChatWorkspace() {
       setSelectedConversationId(conversation.id);
       setMessages([]);
       setRuns([]);
+      setSelectedRunId(null);
+      setSelectedRun(null);
       setDraft("");
       setError(null);
     } catch (nextError) {
@@ -202,6 +260,7 @@ export function ChatWorkspace() {
         result.assistant_message,
       ]);
       setRuns(nextRuns);
+      setSelectedRunId(nextRuns[0]?.id ?? null);
       setDraft("");
       setError(null);
     } catch (nextError) {
@@ -215,6 +274,7 @@ export function ChatWorkspace() {
       try {
         const nextRuns = await apiClient.listRuns(selectedConversationId);
         setRuns(nextRuns);
+        setSelectedRunId(nextRuns[0]?.id ?? null);
       } catch {
         // Keep the original request error when the recovery refresh also fails.
       }
@@ -264,13 +324,17 @@ export function ChatWorkspace() {
           conversation={selectedConversation}
           messages={messages}
           runs={runs}
+          selectedRun={selectedRun}
           draft={draft}
           isLoadingMessages={isLoadingMessages}
           isLoadingRuns={isLoadingRuns}
+          isLoadingRunDetail={isLoadingRunDetail}
           isSendingMessage={isSendingMessage}
+          selectedRunId={selectedRunId}
           onDraftChange={setDraft}
           onSendMessage={handleSendMessage}
           onCreateConversation={handleCreateConversation}
+          onSelectRun={setSelectedRunId}
         />
       </div>
     </section>
