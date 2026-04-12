@@ -41,6 +41,20 @@ export type Message = {
   created_at: string;
 };
 
+export type RunStatus = "pending" | "completed" | "failed";
+
+export type Run = {
+  id: number;
+  conversation_id: number;
+  user_message_id: number;
+  provider: string;
+  model: string;
+  status: RunStatus;
+  error_message: string | null;
+  started_at: string;
+  finished_at: string | null;
+};
+
 export type CreateMessageResult = {
   user_message: Message;
   assistant_message: Message;

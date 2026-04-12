@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, status
 from app.api.deps import get_conversation_service
 from app.schemas.conversation import ConversationCreate, ConversationRead
 from app.schemas.message import MessageCreate, MessageCreateResult, MessageRead
+from app.schemas.run import RunRead
 from app.services.conversation_service import ConversationService
 
 
@@ -66,3 +67,12 @@ def list_messages(
 ) -> list[MessageRead]:
     messages = service.list_messages(conversation_id=conversation_id)
     return [MessageRead.model_validate(message) for message in messages]
+
+
+@router.get("/{conversation_id}/runs", response_model=list[RunRead])
+def list_runs(
+    conversation_id: int,
+    service: ConversationServiceDep,
+) -> list[RunRead]:
+    runs = service.list_runs(conversation_id=conversation_id)
+    return [RunRead.model_validate(run) for run in runs]

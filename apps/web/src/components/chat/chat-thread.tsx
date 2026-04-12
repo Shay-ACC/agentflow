@@ -1,11 +1,14 @@
-import type { Conversation, Message } from "@/lib/api";
+import { RunTracePanel } from "@/components/chat/run-trace-panel";
+import type { Conversation, Message, Run } from "@/lib/api";
 
 
 type ChatThreadProps = {
   conversation: Conversation | null;
   messages: Message[];
+  runs: Run[];
   draft: string;
   isLoadingMessages: boolean;
+  isLoadingRuns: boolean;
   isSendingMessage: boolean;
   onDraftChange: (value: string) => void;
   onSendMessage: () => void;
@@ -24,8 +27,10 @@ function formatMessageTime(value: string): string {
 export function ChatThread({
   conversation,
   messages,
+  runs,
   draft,
   isLoadingMessages,
+  isLoadingRuns,
   isSendingMessage,
   onDraftChange,
   onSendMessage,
@@ -69,6 +74,8 @@ export function ChatThread({
         </div>
       ) : (
         <>
+          <RunTracePanel runs={runs} isLoadingRuns={isLoadingRuns} />
+
           <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
             {isLoadingMessages ? (
               <div className="rounded-2xl border border-dashed border-app-border px-4 py-5 text-sm text-app-subtle">

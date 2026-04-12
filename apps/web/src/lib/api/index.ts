@@ -7,4 +7,6 @@ export type {
   CreateMessageResult,
   Message,
   MessageRole,
+  Run,
+  RunStatus,
 } from "./types";

@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.config import get_settings
 from app.core.db import Base
-from app.models import Conversation, Message
+from app.models import Conversation, Message, Run
 
 
 config = context.config

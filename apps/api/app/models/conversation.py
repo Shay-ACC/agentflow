@@ -21,3 +21,8 @@ class Conversation(Base):
         cascade="all, delete-orphan",
         order_by="Message.created_at",
     )
+    runs: Mapped[list["Run"]] = relationship(
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="Run.started_at",
+    )

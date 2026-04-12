@@ -24,3 +24,4 @@ class Message(Base):
     )
 
     conversation: Mapped["Conversation"] = relationship(back_populates="messages")
+    run: Mapped["Run | None"] = relationship(back_populates="user_message")
