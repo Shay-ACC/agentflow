@@ -25,7 +25,10 @@ class Settings(BaseSettings):
     )
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     qdrant_url: str = Field(default="http://localhost:6333", alias="QDRANT_URL")
-    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    llm_provider: str = Field(default="openai", alias="LLM_PROVIDER")
+    llm_api_key: str = Field(default="", alias="LLM_API_KEY")
+    llm_model: str = Field(default="gpt-4.1-mini", alias="LLM_MODEL")
+    llm_base_url: str | None = Field(default=None, alias="LLM_BASE_URL")
 
 
 @lru_cache

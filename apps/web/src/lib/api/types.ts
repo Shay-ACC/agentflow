@@ -18,8 +18,10 @@ export type ApiHealth = {
       url: string;
       error: string | null;
     };
-    openai: {
+    llm: {
       configured: boolean;
+      provider: string;
+      model: string;
     };
   };
 };
@@ -37,6 +39,11 @@ export type Message = {
   role: MessageRole;
   content: string;
   created_at: string;
+};
+
+export type CreateMessageResult = {
+  user_message: Message;
+  assistant_message: Message;
 };
 
 export type ApiRequestOptions = {

@@ -17,3 +17,8 @@ class MessageRead(BaseModel):
     role: str
     content: str
     created_at: datetime
+
+
+class MessageCreateResult(BaseModel):
+    user_message: MessageRead
+    assistant_message: MessageRead

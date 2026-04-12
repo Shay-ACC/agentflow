@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 
 from app.api.deps import get_conversation_service
 from app.schemas.conversation import ConversationCreate, ConversationRead
-from app.schemas.message import MessageCreate, MessageRead
+from app.schemas.message import MessageCreate, MessageCreateResult, MessageRead
 from app.services.conversation_service import ConversationService
 
 
@@ -44,16 +44,19 @@ def get_conversation(
 
 @router.post(
     "/{conversation_id}/messages",
-    response_model=MessageRead,
+    response_model=MessageCreateResult,
     status_code=status.HTTP_201_CREATED,
 )
 def create_message(
     conversation_id: int,
     payload: MessageCreate,
     service: ConversationServiceDep,
-) -> MessageRead:
-    message = service.create_message(conversation_id=conversation_id, payload=payload)
-    return MessageRead.model_validate(message)
+) -> MessageCreateResult:
+    result = service.create_message(conversation_id=conversation_id, payload=payload)
+    return MessageCreateResult(
+        user_message=MessageRead.model_validate(result["user_message"]),
+        assistant_message=MessageRead.model_validate(result["assistant_message"]),
+    )
 
 
 @router.get("/{conversation_id}/messages", response_model=list[MessageRead])

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.core.config import get_settings
 from app.core.db import check_database_connection
-from app.core.openai import get_openai_client
+from app.core.openai import get_llm_client
 from app.core.qdrant import check_qdrant_connection, get_qdrant_client
 from app.core.redis import check_redis_connection, get_redis_client
 
@@ -18,7 +18,7 @@ def read_health() -> dict[str, object]:
     qdrant_check = check_qdrant_connection()
     redis_client = get_redis_client()
     qdrant_client = get_qdrant_client()
-    openai_client = get_openai_client()
+    llm_client = get_llm_client()
 
     status = (
         "ok"
@@ -46,8 +46,10 @@ def read_health() -> dict[str, object]:
                 "url": qdrant_client.url,
                 "error": qdrant_check.error,
             },
-            "openai": {
-                "configured": openai_client.is_configured,
+            "llm": {
+                "configured": llm_client.is_configured,
+                "provider": llm_client.provider,
+                "model": llm_client.model,
             },
         },
     }

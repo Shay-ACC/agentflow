@@ -5,6 +5,7 @@ import type {
   ApiRequestOptions,
   Conversation,
   CreateMessageInput,
+  CreateMessageResult,
   Message,
 } from "./types";
 
@@ -67,8 +68,8 @@ export class ApiClient {
   async createMessage(
     conversationId: number,
     payload: CreateMessageInput,
-  ): Promise<Message> {
-    return this.request<Message>(`/conversations/${conversationId}/messages`, {
+  ): Promise<CreateMessageResult> {
+    return this.request<CreateMessageResult>(`/conversations/${conversationId}/messages`, {
       method: "POST",
       body: payload,
     });

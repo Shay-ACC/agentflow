@@ -145,15 +145,25 @@ export function ChatWorkspace() {
     setIsSendingMessage(true);
 
     try {
-      await apiClient.createMessage(selectedConversationId, {
+      const result = await apiClient.createMessage(selectedConversationId, {
         role: "user",
         content,
       });
-      const nextMessages = await apiClient.listMessages(selectedConversationId);
-      setMessages(nextMessages);
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        result.user_message,
+        result.assistant_message,
+      ]);
       setDraft("");
       setError(null);
     } catch (nextError) {
+      try {
+        const nextMessages = await apiClient.listMessages(selectedConversationId);
+        setMessages(nextMessages);
+      } catch {
+        // Keep the original request error when the recovery refresh also fails.
+      }
+
       setError(
         nextError instanceof Error
           ? nextError.message
@@ -174,9 +184,8 @@ export function ChatWorkspace() {
           Conversation Workspace
         </h1>
         <p className="max-w-3xl text-sm leading-7 text-app-subtle">
-          First frontend integration slice: create conversations, inspect stored
-          messages, and send new user messages against the working backend CRUD
-          endpoints.
+          First AI response slice: create conversations, send a user message,
+          and render the saved assistant reply returned by the backend.
         </p>
       </header>
 

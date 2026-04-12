@@ -4,6 +4,7 @@ export type {
   ApiRequestOptions,
   Conversation,
   CreateMessageInput,
+  CreateMessageResult,
   Message,
   MessageRole,
 } from "./types";
