@@ -1,4 +1,4 @@
-# AgentFlow
+# AgentFlow: An AI Agent Project Built with Codex
 
 Portfolio-grade full-stack AI agent system for job interviews and new graduate job hunting.
 
