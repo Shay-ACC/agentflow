@@ -6,8 +6,10 @@ type ConversationListProps = {
   selectedConversationId: number | null;
   isLoading: boolean;
   isCreating: boolean;
+  deletingConversationId: number | null;
   onCreateConversation: () => void;
   onSelectConversation: (conversationId: number) => void;
+  onDeleteConversation: (conversationId: number) => void;
 };
 
 
@@ -31,8 +33,10 @@ export function ConversationList({
   selectedConversationId,
   isLoading,
   isCreating,
+  deletingConversationId,
   onCreateConversation,
   onSelectConversation,
+  onDeleteConversation,
 }: ConversationListProps) {
   return (
     <aside className="flex min-h-[620px] flex-col rounded-[28px] border border-app-border bg-app-panel">
@@ -71,26 +75,42 @@ export function ConversationList({
         {!isLoading
           ? conversations.map((conversation) => {
               const isActive = conversation.id === selectedConversationId;
+              const isDeleting = conversation.id === deletingConversationId;
 
               return (
-                <button
+                <div
                   key={conversation.id}
-                  type="button"
-                  onClick={() => onSelectConversation(conversation.id)}
                   className={[
-                    "w-full rounded-2xl border px-4 py-3 text-left transition",
+                    "rounded-2xl border px-4 py-3 transition",
                     isActive
                       ? "border-app-accent bg-app-panel-soft"
                       : "border-app-border bg-transparent hover:border-app-accent",
                   ].join(" ")}
                 >
-                  <p className="text-sm font-medium text-app-text">
-                    {formatConversationLabel(conversation)}
-                  </p>
-                  <p className="mt-1 text-xs text-app-muted">
-                    {formatConversationTime(conversation.created_at)}
-                  </p>
-                </button>
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onSelectConversation(conversation.id)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <p className="text-sm font-medium text-app-text">
+                        {formatConversationLabel(conversation)}
+                      </p>
+                      <p className="mt-1 text-xs text-app-muted">
+                        {formatConversationTime(conversation.created_at)}
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onDeleteConversation(conversation.id)}
+                      disabled={isDeleting}
+                      className="rounded-full border border-app-border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-app-muted transition hover:border-rose-400 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isDeleting ? "Deleting" : "Delete"}
+                    </button>
+                  </div>
+                </div>
               );
             })
           : null}

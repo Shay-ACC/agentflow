@@ -24,3 +24,7 @@ class ConversationRepository:
             Conversation.id.desc(),
         )
         return list(self.session.scalars(statement).all())
+
+    def delete(self, conversation: Conversation) -> None:
+        self.session.delete(conversation)
+        self.session.commit()

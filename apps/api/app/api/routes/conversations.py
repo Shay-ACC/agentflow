@@ -43,6 +43,14 @@ def get_conversation(
     return ConversationRead.model_validate(conversation)
 
 
+@router.delete("/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_conversation(
+    conversation_id: int,
+    service: ConversationServiceDep,
+) -> None:
+    service.delete_conversation(conversation_id=conversation_id)
+
+
 @router.post(
     "/{conversation_id}/messages",
     response_model=MessageCreateResult,

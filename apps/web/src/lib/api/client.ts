@@ -69,6 +69,12 @@ export class ApiClient {
     });
   }
 
+  async deleteConversation(conversationId: number): Promise<void> {
+    return this.request<void>(`/conversations/${conversationId}`, {
+      method: "DELETE",
+    });
+  }
+
   async listMessages(conversationId: number): Promise<Message[]> {
     return this.request<Message[]>(`/conversations/${conversationId}/messages`);
   }

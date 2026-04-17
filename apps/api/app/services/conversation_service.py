@@ -41,6 +41,10 @@ class ConversationService:
     def list_conversations(self):
         return self.conversation_repository.list_all()
 
+    def delete_conversation(self, *, conversation_id: int) -> None:
+        conversation = self._get_conversation_or_404(conversation_id)
+        self.conversation_repository.delete(conversation)
+
     def create_message(self, *, conversation_id: int, payload: MessageCreate):
         self._get_conversation_or_404(conversation_id)
         llm_client = get_llm_client()

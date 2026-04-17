@@ -21,6 +21,7 @@ export function ChatWorkspace() {
   const [isLoadingRuns, setIsLoadingRuns] = useState(false);
   const [isLoadingRunDetail, setIsLoadingRunDetail] = useState(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [deletingConversationId, setDeletingConversationId] = useState<number | null>(null);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -240,6 +241,50 @@ export function ChatWorkspace() {
     }
   }
 
+  async function handleDeleteConversation(conversationId: number) {
+    const conversation = conversations.find((item) => item.id === conversationId);
+    if (conversation === undefined) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete Conversation ${conversation.id}? This will remove its messages and runs.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingConversationId(conversationId);
+
+    try {
+      await apiClient.deleteConversation(conversationId);
+
+      const nextConversations = conversations.filter((item) => item.id !== conversationId);
+      const isDeletingSelectedConversation = selectedConversationId === conversationId;
+
+      setConversations(nextConversations);
+
+      if (isDeletingSelectedConversation) {
+        setSelectedConversationId(nextConversations[0]?.id ?? null);
+        setMessages([]);
+        setRuns([]);
+        setSelectedRunId(null);
+        setSelectedRun(null);
+        setDraft("");
+      }
+
+      setError(null);
+    } catch (nextError) {
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : "Failed to delete the conversation.",
+      );
+    } finally {
+      setDeletingConversationId(null);
+    }
+  }
+
   async function handleSendMessage() {
     const content = draft.trim();
     if (selectedConversationId === null || content.length === 0) {
@@ -316,8 +361,10 @@ export function ChatWorkspace() {
           selectedConversationId={selectedConversationId}
           isLoading={isLoadingConversations}
           isCreating={isCreatingConversation}
+          deletingConversationId={deletingConversationId}
           onCreateConversation={handleCreateConversation}
           onSelectConversation={setSelectedConversationId}
+          onDeleteConversation={handleDeleteConversation}
         />
 
         <ChatThread
