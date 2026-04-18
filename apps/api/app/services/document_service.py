@@ -165,6 +165,32 @@ class DocumentService:
             for document in documents
         ]
 
+    def delete_document(self, *, document_id: int) -> None:
+        document = self.document_repository.get_by_id(document_id)
+        if document is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found.",
+            )
+
+        point_ids = [chunk.qdrant_point_id for chunk in document.chunks]
+
+        try:
+            delete_chunk_points(point_ids)
+        except Exception as exc:
+            logger.exception(
+                "Qdrant document delete failed document_id=%s exception_type=%s exception_message=%s",
+                document_id,
+                type(exc).__name__,
+                str(exc),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Qdrant cleanup failed. [{type(exc).__name__}: {exc}]",
+            ) from exc
+
+        self.document_repository.delete(document)
+
     def _build_document_read(
         self,
         document,

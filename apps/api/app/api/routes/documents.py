@@ -16,6 +16,11 @@ def list_documents(service: DocumentServiceDep) -> list[DocumentRead]:
     return service.list_documents()
 
 
+@router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_document(document_id: int, service: DocumentServiceDep) -> None:
+    service.delete_document(document_id=document_id)
+
+
 @router.post("", response_model=DocumentUploadResult, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: Annotated[UploadFile, File(...)],

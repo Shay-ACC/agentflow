@@ -167,13 +167,18 @@ def delete_chunk_points(point_ids: list[str]) -> None:
         return
 
     settings = get_settings()
-    _qdrant_request(
-        "POST",
-        f"/collections/{settings.qdrant_collection_name}/points/delete?wait=true",
-        payload={
-            "points": point_ids,
-        },
-    )
+    try:
+        _qdrant_request(
+            "POST",
+            f"/collections/{settings.qdrant_collection_name}/points/delete?wait=true",
+            payload={
+                "points": point_ids,
+            },
+        )
+    except error.HTTPError as exc:
+        if exc.code == 404:
+            return
+        raise
 
 
 def _qdrant_request(

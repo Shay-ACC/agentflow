@@ -58,6 +58,12 @@ export class ApiClient {
     return this.request<DocumentRecord[]>("/documents");
   }
 
+  async deleteDocument(documentId: number): Promise<void> {
+    return this.request<void>(`/documents/${documentId}`, {
+      method: "DELETE",
+    });
+  }
+
   async getConversation(conversationId: number): Promise<Conversation> {
     return this.request<Conversation>(`/conversations/${conversationId}`);
   }

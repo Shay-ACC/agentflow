@@ -8,6 +8,14 @@ class DocumentRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
+    def get_by_id(self, document_id: int) -> Document | None:
+        statement = (
+            select(Document)
+            .where(Document.id == document_id)
+            .options(selectinload(Document.chunks))
+        )
+        return self.session.scalar(statement)
+
     def get_by_content_hash(self, content_hash: str) -> Document | None:
         statement = (
             select(Document)

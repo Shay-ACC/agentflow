@@ -30,13 +30,30 @@ export function DocumentUploadForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function loadDocuments() {
+    setIsLoading(true);
+
+    try {
+      const nextDocuments = await apiClient.listDocuments();
+      setDocuments(nextDocuments);
+      setErrorMessage(null);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to load documents.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
     let isActive = true;
 
-    async function loadDocuments() {
+    async function loadDocumentsSafely() {
       setIsLoading(true);
 
       try {
@@ -62,7 +79,7 @@ export function DocumentUploadForm() {
       }
     }
 
-    void loadDocuments();
+    void loadDocumentsSafely();
 
     return () => {
       isActive = false;
@@ -110,6 +127,31 @@ export function DocumentUploadForm() {
       );
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  async function handleDeleteDocument(document: DocumentRecord) {
+    const confirmed = window.confirm(
+      `Delete ${document.filename}? This will remove its chunks and vector index.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingDocumentId(document.id);
+
+    try {
+      await apiClient.deleteDocument(document.id);
+      await loadDocuments();
+      setSuccessMessage(`Deleted ${document.filename}.`);
+      setErrorMessage(null);
+    } catch (error) {
+      setSuccessMessage(null);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Document deletion failed.",
+      );
+    } finally {
+      setDeletingDocumentId(null);
     }
   }
 
@@ -218,6 +260,14 @@ export function DocumentUploadForm() {
                       <span className="rounded-full bg-app-panel-soft px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-muted">
                         {document.chunk_count} chunks
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteDocument(document)}
+                        disabled={deletingDocumentId === document.id}
+                        className="rounded-full border border-app-border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-muted transition hover:border-rose-400 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {deletingDocumentId === document.id ? "Deleting" : "Delete"}
+                      </button>
                     </div>
                   </div>
 
