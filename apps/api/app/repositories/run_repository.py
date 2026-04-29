@@ -15,7 +15,11 @@ class RunRepository:
         statement = (
             select(Run)
             .where(Run.id == run_id)
-            .options(selectinload(Run.user_message), selectinload(Run.sources))
+            .options(
+                selectinload(Run.user_message),
+                selectinload(Run.sources),
+                selectinload(Run.tool_events),
+            )
         )
         return self.session.scalar(statement)
 

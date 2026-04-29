@@ -46,3 +46,8 @@ class Run(Base):
         cascade="all, delete-orphan",
         order_by="RunSource.rank",
     )
+    tool_events: Mapped[list["ToolEvent"]] = relationship(
+        back_populates="run",
+        cascade="all, delete-orphan",
+        order_by="ToolEvent.step_index",
+    )

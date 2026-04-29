@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.tool_event import ToolEventRead
+
 
 class RunSourceRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -30,3 +32,4 @@ class RunRead(BaseModel):
 
 class RunDetailRead(RunRead):
     sources: list[RunSourceRead]
+    tool_events: list[ToolEventRead]

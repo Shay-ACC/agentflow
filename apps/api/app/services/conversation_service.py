@@ -9,7 +9,9 @@ from app.core.openai import (
     EmbeddingResponseError,
     LLMConfigurationError,
     LLMResponseError,
-    generate_assistant_reply,
+    ToolCallCompatibilityError,
+    generate_assistant_reply_from_tool_results,
+    generate_assistant_reply_or_tool_calls,
     generate_embeddings,
     get_llm_client,
 )
@@ -18,7 +20,9 @@ from app.repositories.chunk_repository import ChunkRepository
 from app.repositories.conversation_repository import ConversationRepository
 from app.repositories.message_repository import MessageRepository
 from app.repositories.run_repository import RunRepository
+from app.repositories.tool_event_repository import ToolEventRepository
 from app.schemas.message import MessageCreate
+from app.services.tool_service import ToolExecutionError, ToolService
 
 
 logger = logging.getLogger(__name__)
@@ -30,7 +34,9 @@ class ConversationService:
         self.conversation_repository = ConversationRepository(session)
         self.message_repository = MessageRepository(session)
         self.run_repository = RunRepository(session)
+        self.tool_event_repository = ToolEventRepository(session)
         self.chunk_repository = ChunkRepository(session)
+        self.tool_service = ToolService(session)
 
     def create_conversation(self):
         return self.conversation_repository.create()
@@ -69,16 +75,55 @@ class ConversationService:
         )
 
         try:
-            assistant_content = generate_assistant_reply(
-                conversation_messages=[
-                    {
-                        "role": message.role,
-                        "content": message.content,
-                    }
-                    for message in conversation_messages
-                ],
+            assistant_content = self._generate_assistant_content(
+                run=run,
+                conversation_messages=conversation_messages,
+                user_message_content=payload.content,
                 system_messages=system_messages,
             )
+        except ToolCallCompatibilityError as exc:
+            self.tool_event_repository.create_failed(
+                run,
+                step_index=self.tool_event_repository.next_step_index(run),
+                tool_name="provider_tool_call",
+                arguments_json="{}",
+                error_message=self._truncate_error_message(str(exc)),
+            )
+            self.run_repository.mark_failed(
+                run,
+                error_message=self._truncate_error_message(str(exc)),
+            )
+            logger.error(
+                "LLM tool call compatibility error conversation_id=%s exception_type=%s exception_message=%s",
+                conversation_id,
+                type(exc).__name__,
+                str(exc),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=self._build_error_detail(
+                    public_message="LLM tool call compatibility failed.",
+                    exc=exc,
+                ),
+            ) from exc
+        except ToolExecutionError as exc:
+            self.run_repository.mark_failed(
+                run,
+                error_message=self._truncate_error_message(str(exc)),
+            )
+            logger.error(
+                "Internal tool execution failed conversation_id=%s exception_type=%s exception_message=%s",
+                conversation_id,
+                type(exc).__name__,
+                str(exc),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=self._build_error_detail(
+                    public_message="Internal tool execution failed.",
+                    exc=exc,
+                ),
+            ) from exc
         except LLMConfigurationError as exc:
             self.run_repository.mark_failed(
                 run,
@@ -181,6 +226,89 @@ class ConversationService:
     def _truncate_error_message(self, message: str) -> str:
         normalized_message = message.strip() or "Unknown error."
         return normalized_message[:500]
+
+    def _generate_assistant_content(
+        self,
+        *,
+        run,
+        conversation_messages: list,
+        user_message_content: str,
+        system_messages: list[str],
+    ) -> str:
+        decision = generate_assistant_reply_or_tool_calls(
+            conversation_messages=[
+                {
+                    "role": message.role,
+                    "content": message.content,
+                }
+                for message in conversation_messages
+            ],
+            system_messages=[self._build_tool_system_message(), *system_messages],
+            tools=self.tool_service.get_tool_definitions(),
+        )
+
+        if not decision.tool_calls:
+            if decision.assistant_content:
+                return decision.assistant_content
+            raise LLMResponseError("The provider returned no assistant response or tool call.")
+
+        tool_results: list[dict[str, str]] = []
+        for step_index, tool_call in enumerate(decision.tool_calls, start=1):
+            try:
+                tool_result = self.tool_service.execute(
+                    tool_name=tool_call.name,
+                    arguments=tool_call.arguments,
+                )
+            except Exception as exc:
+                self.tool_event_repository.create_failed(
+                    run,
+                    step_index=step_index,
+                    tool_name=tool_call.name,
+                    arguments_json=tool_call.arguments_json,
+                    error_message=self._truncate_error_message(str(exc)),
+                )
+                raise ToolExecutionError(str(exc)) from exc
+
+            self.tool_event_repository.create_completed(
+                run,
+                step_index=step_index,
+                tool_name=tool_call.name,
+                arguments_json=tool_call.arguments_json,
+                result_preview=tool_result.result_preview,
+            )
+            tool_results.append(
+                {
+                    "call_id": tool_call.call_id,
+                    "tool_name": tool_call.name,
+                    "output": tool_result.output_json,
+                },
+            )
+            logger.info(
+                "Internal tool executed run_id=%s step_index=%s tool_name=%s",
+                run.id,
+                step_index,
+                tool_call.name,
+            )
+
+        if decision.response_id is None:
+            raise ToolCallCompatibilityError("Provider did not return a response id for tool output submission.")
+
+        return generate_assistant_reply_from_tool_results(
+            previous_response_id=decision.response_id,
+            tool_results=tool_results,
+            user_message_content=user_message_content,
+        )
+
+    def _build_tool_system_message(self) -> str:
+        return "\n".join(
+            [
+                "You can call internal tools when they are useful.",
+                "Use list_documents when the user asks about uploaded documents.",
+                "Use get_run_detail when the user asks to inspect a run by run_id.",
+                "Use search_documents when the user asks to search indexed document chunks.",
+                "Do not claim tool results unless you called the relevant tool.",
+            ],
+        )
 
     def _build_retrieval_system_messages(
         self,

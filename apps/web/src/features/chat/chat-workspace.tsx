@@ -81,13 +81,14 @@ export function ChatWorkspace() {
       return;
     }
 
+    const conversationId = selectedConversationId;
     let isActive = true;
 
     async function loadMessages() {
       setIsLoadingMessages(true);
 
       try {
-        const nextMessages = await apiClient.listMessages(selectedConversationId);
+        const nextMessages = await apiClient.listMessages(conversationId);
         if (!isActive) {
           return;
         }
@@ -126,13 +127,14 @@ export function ChatWorkspace() {
       return;
     }
 
+    const conversationId = selectedConversationId;
     let isActive = true;
 
     async function loadRuns() {
       setIsLoadingRuns(true);
 
       try {
-        const nextRuns = await apiClient.listRuns(selectedConversationId);
+        const nextRuns = await apiClient.listRuns(conversationId);
         if (!isActive) {
           return;
         }
@@ -176,13 +178,14 @@ export function ChatWorkspace() {
       return;
     }
 
+    const runId = selectedRunId;
     let isActive = true;
 
     async function loadRunDetail() {
       setIsLoadingRunDetail(true);
 
       try {
-        const nextRun = await apiClient.getRun(selectedRunId);
+        const nextRun = await apiClient.getRun(runId);
         if (!isActive) {
           return;
         }

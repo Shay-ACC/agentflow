@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import get_conversation_service
 from app.schemas.run import RunDetailRead, RunSourceRead
+from app.schemas.tool_event import ToolEventRead
 from app.services.conversation_service import ConversationService
 
 
@@ -28,6 +29,10 @@ def get_run(run_id: int, service: ConversationServiceDep) -> RunDetailRead:
         sources=[
             RunSourceRead.model_validate(source)
             for source in run.sources
+        ],
+        tool_events=[
+            ToolEventRead.model_validate(event)
+            for event in run.tool_events
         ],
     )
 

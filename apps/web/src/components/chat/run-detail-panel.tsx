@@ -120,6 +120,60 @@ export function RunDetailPanel({ run, isLoading }: RunDetailPanelProps) {
               )}
             </div>
 
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-app-muted">
+                Tool Events
+              </p>
+
+              {run.tool_events.length === 0 ? (
+                <p className="mt-2 text-sm leading-6 text-app-subtle">
+                  No internal tools were called for this run.
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {run.tool_events.map((event) => (
+                    <article
+                      key={event.id}
+                      className="rounded-2xl border border-app-border bg-[#0b1422] px-4 py-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-app-muted">
+                          <span>Step {event.step_index}</span>
+                          <span>{event.tool_name}</span>
+                        </div>
+                        <span
+                          className={[
+                            "rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]",
+                            event.status === "completed"
+                              ? "bg-emerald-500/15 text-emerald-300"
+                              : "bg-rose-500/15 text-rose-200",
+                          ].join(" ")}
+                        >
+                          {event.status}
+                        </span>
+                      </div>
+
+                      <p className="mt-3 break-words text-xs leading-5 text-app-subtle">
+                        Args: {event.arguments_json}
+                      </p>
+
+                      {event.result_preview ? (
+                        <p className="mt-3 text-sm leading-6 text-app-text">
+                          {event.result_preview}
+                        </p>
+                      ) : null}
+
+                      {event.error_message ? (
+                        <p className="mt-3 text-sm leading-6 text-rose-200">
+                          {event.error_message}
+                        </p>
+                      ) : null}
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {run.error_message ? (
               <div className="mt-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-app-muted">

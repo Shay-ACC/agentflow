@@ -82,6 +82,20 @@ export type RunSource = {
 
 export type RunDetail = Run & {
   sources: RunSource[];
+  tool_events: ToolEvent[];
+};
+
+export type ToolEvent = {
+  id: number;
+  run_id: number;
+  step_index: number;
+  tool_name: string;
+  arguments_json: string;
+  result_preview: string | null;
+  status: "completed" | "failed";
+  error_message: string | null;
+  started_at: string;
+  finished_at: string | null;
 };
 
 export type CreateMessageResult = {
