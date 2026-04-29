@@ -12,6 +12,10 @@ htmlcov/
 pip-wheel-metadata/
 .venv/
 venv/
+build/
+site/
+.eggs/
+*.egg
 
 # Node / Next.js
 node_modules/
@@ -38,3 +42,9 @@ pnpm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local AI tooling
+.codex/
+
+# Optional: ignore OpenSpec if you do not want to publish spec/workflow files
+# openspec/
